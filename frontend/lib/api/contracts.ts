@@ -2,45 +2,6 @@ import axios from "axios"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
-// Types
-export type Contract = {
-  _id: string
-  client:
-    | string
-    | {
-        _id: string
-        name: string
-        email: string
-        company?: string
-      }
-  template?: string
-  title: string
-  content: string
-  status: "draft" | "sent" | "viewed" | "signed" | "expired" | "cancelled"
-  signatureRequest?: {
-    id: string
-    url: string
-    expiresAt: string
-  }
-  signedDocument?: {
-    url: string
-    cloudinaryId: string
-  }
-  sentAt?: string
-  viewedAt?: string
-  signedAt?: string
-  expiresAt?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type ContractFormData = {
-  clientId: string
-  templateId?: string
-  title: string
-  content: string
-}
-
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: API_URL,
@@ -61,79 +22,126 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
+// Types
+export type Contract = {
+  id: string
+  title: string
+  content: string
+  status: "draft" | "sent" | "signed" | "expired" | "declined"
+  clientId?: string
+  clientName?: string
+  createdAt: string
+  updatedAt: string
+  signedAt?: string
+  expiresAt?: string
+  signatureRequestId?: string
+  signatureUrl?: string
+}
+
+export type SignatureRequest = {
+  contractId: string
+  recipientName: string
+  recipientEmail: string
+  message?: string
+  expiresIn: number
+}
+
 // Get all contracts
 export const getContracts = async (): Promise<Contract[]> => {
   try {
     const response = await api.get("/contracts")
     return response.data
   } catch (error) {
-    console.error("Get contracts error:", error)
+    console.error("Error fetching contracts:", error)
     throw error
   }
 }
 
 // Get contract by ID
-export const getContractById = async (id: string): Promise<Contract> => {
+export const getContract = async (id: string): Promise<Contract> => {
   try {
     const response = await api.get(`/contracts/${id}`)
     return response.data
   } catch (error) {
-    console.error("Get contract error:", error)
+    console.error(`Error fetching contract ${id}:`, error)
     throw error
   }
 }
 
 // Create contract
-export const createContract = async (data: ContractFormData): Promise<Contract> => {
+export const createContract = async (contractData: Partial<Contract>): Promise<Contract> => {
   try {
-    const response = await api.post("/contracts", data)
+    const response = await api.post("/contracts", contractData)
     return response.data
   } catch (error) {
-    console.error("Create contract error:", error)
+    console.error("Error creating contract:", error)
     throw error
   }
 }
 
 // Update contract
-export const updateContract = async (id: string, data: Partial<ContractFormData>): Promise<Contract> => {
+export const updateContract = async (id: string, contractData: Partial<Contract>): Promise<Contract> => {
   try {
-    const response = await api.put(`/contracts/${id}`, data)
+    const response = await api.put(`/contracts/${id}`, contractData)
     return response.data
   } catch (error) {
-    console.error("Update contract error:", error)
+    console.error(`Error updating contract ${id}:`, error)
     throw error
   }
 }
 
 // Delete contract
-export const deleteContract = async (id: string): Promise<{ message: string }> => {
+export const deleteContract = async (id: string): Promise<void> => {
   try {
-    const response = await api.delete(`/contracts/${id}`)
-    return response.data
+    await api.delete(`/contracts/${id}`)
   } catch (error) {
-    console.error("Delete contract error:", error)
+    console.error(`Error deleting contract ${id}:`, error)
     throw error
   }
 }
 
-// Send contract for signature
-export const sendContract = async (id: string): Promise<Contract> => {
+// Send signature request
+export const sendSignatureRequest = async (requestData: SignatureRequest): Promise<any> => {
   try {
-    const response = await api.post(`/contracts/${id}/send`)
+    const response = await api.post("/contracts/signature-request", requestData)
     return response.data
   } catch (error) {
-    console.error("Send contract error:", error)
+    console.error("Error sending signature request:", error)
     throw error
   }
 }
 
-// Get contracts by status
-export const getContractsByStatus = async (status: Contract["status"]): Promise<Contract[]> => {
+// Sign contract
+export const signContract = async (id: string, signatureData: string): Promise<Contract> => {
   try {
-    const response = await api.get(`/contracts/status/${status}`)
+    const response = await api.post(`/contracts/${id}/sign`, { signatureData })
     return response.data
   } catch (error) {
-    console.error("Get contracts by status error:", error)
+    console.error(`Error signing contract ${id}:`, error)
+    throw error
+  }
+}
+
+// Decline contract
+export const declineContract = async (id: string, reason: string): Promise< Contract | any> => {
+  try {
+    const response = await api.post(`/contracts/${id}/decline`, { reason })
+    return response.data
+
+  } catch (error) {
+    console.error(`Error declining contract  ${ reason }`)
+   
+
+  }  
+}
+
+// Get signature status
+export const getSignatureStatus = async (id: string): Promise<any> => {
+  try {
+    const response = await api.get(`/contracts/${id}/signature-status`)
+    return response.data
+  } catch (error) {
+    console.error(`Error getting signature status for contract ${id}:`, error)
     throw error
   }
 }

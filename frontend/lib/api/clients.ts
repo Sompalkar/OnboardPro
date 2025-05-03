@@ -2,28 +2,6 @@ import axios from "axios"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
 
-// Types
-export type Client = {
-  _id: string
-  name: string
-  email: string
-  phone?: string
-  company?: string
-  address?: {
-    street?: string
-    city?: string
-    state?: string
-    zipCode?: string
-    country?: string
-  }
-  status: "active" | "inactive" | "pending"
-  notes?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type ClientFormData = Omit<Client, "_id" | "createdAt" | "updatedAt">
-
 // Create axios instance with base URL
 const api = axios.create({
   baseURL: API_URL,
@@ -44,79 +22,71 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 )
 
+// Types
+export type Client = {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  company?: string
+  address?: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  projects?: any[]
+  payments?: any[]
+}
+
 // Get all clients
 export const getClients = async (): Promise<Client[]> => {
   try {
     const response = await api.get("/clients")
     return response.data
   } catch (error) {
-    console.error("Get clients error:", error)
+    console.error("Error fetching clients:", error)
     throw error
   }
 }
 
 // Get client by ID
-export const getClientById = async (id: string): Promise<Client> => {
+export const getClient = async (id: string): Promise<Client> => {
   try {
     const response = await api.get(`/clients/${id}`)
     return response.data
   } catch (error) {
-    console.error("Get client error:", error)
+    console.error(`Error fetching client ${id}:`, error)
     throw error
   }
 }
 
 // Create client
-export const createClient = async (data: ClientFormData): Promise<Client> => {
+export const createClient = async (clientData: Partial<Client>): Promise<Client> => {
   try {
-    const response = await api.post("/clients", data)
+    const response = await api.post("/clients", clientData)
     return response.data
   } catch (error) {
-    console.error("Create client error:", error)
+    console.error("Error creating client:", error)
     throw error
   }
 }
 
 // Update client
-export const updateClient = async (id: string, data: Partial<ClientFormData>): Promise<Client> => {
+export const updateClient = async (id: string, clientData: Partial<Client>): Promise<Client> => {
   try {
-    const response = await api.put(`/clients/${id}`, data)
+    const response = await api.put(`/clients/${id}`, clientData)
     return response.data
   } catch (error) {
-    console.error("Update client error:", error)
+    console.error(`Error updating client ${id}:`, error)
     throw error
   }
 }
 
 // Delete client
-export const deleteClient = async (id: string): Promise<{ message: string }> => {
+export const deleteClient = async (id: string): Promise<void> => {
   try {
-    const response = await api.delete(`/clients/${id}`)
-    return response.data
+    await api.delete(`/clients/${id}`)
   } catch (error) {
-    console.error("Delete client error:", error)
-    throw error
-  }
-}
-
-// Get client contracts
-export const getClientContracts = async (id: string) => {
-  try {
-    const response = await api.get(`/clients/${id}/contracts`)
-    return response.data
-  } catch (error) {
-    console.error("Get client contracts error:", error)
-    throw error
-  }
-}
-
-// Get client payments
-export const getClientPayments = async (id: string) => {
-  try {
-    const response = await api.get(`/clients/${id}/payments`)
-    return response.data
-  } catch (error) {
-    console.error("Get client payments error:", error)
+    console.error(`Error deleting client ${id}:`, error)
     throw error
   }
 }
